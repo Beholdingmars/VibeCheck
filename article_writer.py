@@ -5,6 +5,9 @@ from openai import OpenAI
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), "CSVs", "reviews_slim.csv.gz")
 df = pd.read_csv(DATA_PATH)
+# the source data spells "Kindle" as "kind lee" in some product names
+for col in ("product_name", "short_name"):
+    df[col] = df[col].str.replace(r"\bkind lee\b", "kindle", regex=True)
 
 MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b"
 MIN_REVIEWS = 10          # 👉 use the same value as in your notebook
@@ -109,6 +112,7 @@ client = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=_api_key
 def clean(text):
     text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.S)
     text = re.sub(r"\s*\[(?:intro|one|two|three)[^\]]*\]", "", text)   # template [...] the model left in
+    text = re.sub(r"(?m)^\s*\[[^\]\n]{3,80}\]\s*$\n?", "", text)      # any other placeholder left on its own line
     text = text.strip()
     if text.lower().startswith("the best and worst"):                  # make the title a heading
         text = "# " + text

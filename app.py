@@ -326,8 +326,10 @@ with tab4:
         st.dataframe(scores, hide_index=True, width="stretch")
 
 # ---------------- Tab 3: article writer ----------------
+REPORT_VERSION = 2   # bump when the writer or its clean-up changes, so cached reports are rebuilt
+
 @st.cache_data(show_spinner=False)
-def generate_article(category, model):          # model in the key -> new cache if you switch model
+def generate_article(category, model, version=REPORT_VERSION):   # model and version in the key -> fresh cache
     return aw.write_article(aw.prompt_v2(category))
 
 
@@ -344,7 +346,7 @@ with tab3:
     if st.button("Write report", type="primary"):
         try:
             with st.spinner("Writing the report… about 20–30 seconds"):
-                article = generate_article(category, aw.MODEL)
+                article = aw.clean(generate_article(category, aw.MODEL))   # clean again: cached text may predate the clean-up
         except Exception as e:
             st.error("The report writer did not answer. Try again in a minute.")
             with st.expander("Technical details"):
